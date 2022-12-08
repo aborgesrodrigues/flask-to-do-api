@@ -1,24 +1,27 @@
 from http import HTTPStatus
 
 from flask import Flask, request
+from to_do_api.audit_logging.formatter import CustomFormatter
 from to_do_api.service.user import UserService
 from to_do_api.utils import response_with_status, success_response
 from to_do_api.audit_logging import HTTPAuditLogger
 import logging
 
+__LOG_FMT = "{\"time\": \"%(asctime)s\", \"name\": \"[%(name)s]\", \"filename\": \"[%(filename)s]\", \"lineno\": \"[%(lineno)s]\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"}"
 
 application = Flask(__name__)
 audit_logger = HTTPAuditLogger.from_env()
 audit_logger.start()
 
 
-logging.basicConfig(level=logging.INFO, format=f'%(levelname)-5s %(asctime)-15s [%(threadName)s] ' \
-            '%(name)s:%(filename)s:%(lineno)d %(message)s')
+logging.basicConfig(level=logging.INFO, format=__LOG_FMT)
+root_logger = logging.getLogger()
+
 
 @application.route("/users", methods=['GET', 'POST'])
 @audit_logger.log_inbound(include_request_in_response=False)
 def users():
-    logging.debug(f"{request.path} - {request.method}")
+    root_logger.debug(f"{request.path} - {request.method}")
     try:
         user_service = UserService()
         if request.method == "POST":
@@ -39,5 +42,5 @@ def users():
 
 
 if __name__ == "__main__":
-    logging.info("*** APPLICATION NAME %s", application.name)
+    root_logger.info("*** APPLICATION NAME %s", application.name)
     application.run(host="0.0.0.0", port=8000)

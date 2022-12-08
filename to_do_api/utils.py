@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 from http import HTTPStatus
-from json import JSONEncoder
 
 from flask import Response, jsonify, make_response
 

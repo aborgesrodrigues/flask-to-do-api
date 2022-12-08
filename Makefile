@@ -1,5 +1,4 @@
-.PHONY: default venv-dev build install tag
-.PHONY: test lint dist dist-upload dist-upload-gitlab-ci clean
+.PHONY: venv-dev
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     RM := echo y | del
@@ -20,8 +19,6 @@ else
     PIP := pip
 endif
 
-default: test lint dist
-
 venv: #
 	virtualenv -p $(VENV_PY_VER) venv
 	$(ACTIVATE) && $(PIP) install -r requirements.txt && $(DEACTIVATE)
@@ -32,11 +29,6 @@ venv-dev:
 
 test: venv-dev
 	$(ACTIVATE) && python -m pytest --cov gradeprimecommonlib --no-cov-on-fail --cov-fail-under=94 --cov-report=xml:coverage.xml --cov-report=html --cov-branch
-
-lint: venv-dev
-	echo "Linting gradeprimecommonlib and tests directories..."
-	$(ACTIVATE) && flake8 .
-	echo "Complete"
 
 start: 
 	$(ACTIVATE) && \

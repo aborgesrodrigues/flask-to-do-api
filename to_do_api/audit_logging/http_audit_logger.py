@@ -14,8 +14,6 @@ from botocore.endpoint import is_valid_endpoint_url
 from botocore.exceptions import NoCredentialsError
 from flask import Request, Response, request
 
-from .context import Context
-
 logger = logging.getLogger(__name__)
 
 
@@ -57,10 +55,9 @@ class HTTPAuditLogger(threading.Thread):
     }
 
     class Record:
-        def __init__(self, key: str, content: str, log_extra: t.Dict[str, str]):
+        def __init__(self, key: str, content: str):
             self.key = key
             self.content = content
-            self.log_extra = log_extra
 
     @staticmethod
     def from_env():
@@ -111,7 +108,7 @@ class HTTPAuditLogger(threading.Thread):
         try:
             audit_id = HTTPAuditLogger._make_audit_id(req, False)
             metadata = HTTPAuditLogger._get_request_metadata(req)
-            req_data = Context.from_request(req)
+            req_data = req
             self._queue_record(audit_id, metadata, req_data)
         except Exception:
             raise
@@ -121,22 +118,12 @@ class HTTPAuditLogger(threading.Thread):
         try:
             audit_id = HTTPAuditLogger._make_audit_id(req, True)
             metadata = HTTPAuditLogger._get_response_metadata(req, resp, include_request_in_response, request_timestamp)
-            req_data = Context.from_request(req)
+            req_data = req
             self._queue_record(audit_id, metadata, req_data)
         except Exception:
             raise
 
-    def _queue_record(self, audit_id: str, data: dict, req_data: t.Optional[Context]):
-        log_extra = None
-        if req_data is not None:
-            # Get any audit log specific fields and add it to the `data` record which is the source for the Log record
-            data.update(req_data.get_audit_log_top_level_fields())
-
-            # ALSO get just the logger top level fields, so we can pass this into the queue, and ensure that the
-            # standard python logger messages have all the required information.   We need to do this here as because
-            # When the queue is consumed in a separate thread, the request won't be valid anymore.
-            log_extra = req_data.get_logger_top_level_fields()
-
+    def _queue_record(self, audit_id: str, data: dict, req_data: t.Optional[Request]):
         # Set the identifier and Timestamp last to ensure it's not overridden.
         # To help consistency, these two fields are set in the golang `audit/logger.go` file, while the `data`
         # fields are populated in the `httpaudit/httpaudit.go` file.
@@ -145,8 +132,7 @@ class HTTPAuditLogger(threading.Thread):
 
         record = HTTPAuditLogger.Record(
             key=self._make_key(audit_id),
-            content=json.dumps(data),
-            log_extra=log_extra
+            content=json.dumps(data)
         )
         self.queue.put(record, block=False)
 
@@ -174,12 +160,12 @@ class HTTPAuditLogger(threading.Thread):
                 "region": self.s3_region,
                 "location": f's3://{self.s3_bucket}/{record.key}'
             }
-            logger.info(f"Wrote audit log. {return_object}", extra=record.log_extra)
+            logger.info(f"Wrote audit log. {return_object}")
 
         except NoCredentialsError as err:
-            logger.error(f"Error writing audit log. {str(err)}", extra=record.log_extra)
+            logger.error(f"Error writing audit log. {str(err)}")
         except Exception as err:
-            logger.error(f"Error writing audit log. {str(err)}", extra=record.log_extra)
+            logger.error(f"Error writing audit log. {str(err)}")
 
     def _make_key(self, audit_id: str) -> str:
         key = f'{self.s3_directory}/{datetime.now().strftime("%Y/%m/%d/%H/")}{audit_id}'
