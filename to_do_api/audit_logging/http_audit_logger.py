@@ -57,11 +57,10 @@ class HTTPAuditLogger(threading.Thread):
     }
 
     class Record:
-        def __init__(self, key: str, content: str, log_extra: t.Dict[str, str], correlation_id: str):
+        def __init__(self, key: str, content: str, log_extra: t.Dict[str, str]):
             self.key = key
             self.content = content
             self.log_extra = log_extra
-            self.correlation_id = correlation_id
 
     @staticmethod
     def from_env():
@@ -137,9 +136,6 @@ class HTTPAuditLogger(threading.Thread):
             # standard python logger messages have all the required information.   We need to do this here as because
             # When the queue is consumed in a separate thread, the request won't be valid anymore.
             log_extra = req_data.get_logger_top_level_fields()
-            correlation_id = req_data.correlation_id
-        else:
-            correlation_id = data.get("correlationId")
 
         # Set the identifier and Timestamp last to ensure it's not overridden.
         # To help consistency, these two fields are set in the golang `audit/logger.go` file, while the `data`
@@ -150,8 +146,7 @@ class HTTPAuditLogger(threading.Thread):
         record = HTTPAuditLogger.Record(
             key=self._make_key(audit_id),
             content=json.dumps(data),
-            log_extra=log_extra,
-            correlation_id=correlation_id
+            log_extra=log_extra
         )
         self.queue.put(record, block=False)
 
@@ -160,8 +155,6 @@ class HTTPAuditLogger(threading.Thread):
         Save content to s3 bucket, should not be called in main thread
         """
         metadata = {}       # The metadata parameter can't be None or Boto3 raises an error
-        if record.correlation_id:
-            metadata = {"correlationId": record.correlation_id}
         try:
             s3_put_response = self.s3_client.put_object(
                 Bucket=self.s3_bucket,
