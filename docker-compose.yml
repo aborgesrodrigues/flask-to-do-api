@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./dev/docker/local.Dockerfile
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: example
+      DB_DATABASE: todo
+      # AUDITLOG_S3_BUCKET: "wcf-audit-local"
+      # AUDITLOG_S3_DIRECTORY: "todo-api/"
+      # AUDITLOG_S3_ENDPOINT: "http://localstack:4566"
+      # AUDITLOG_S3_REGION: "us-east-1"
+      # AWS_ACCESS_KEY_ID: "test"
+      # AWS_SECRET_ACCESS_KEY: "test"
+      # AWS_SESSION_TOKEN: "test"
+    labels:
+        co.elastic.logs/enabled: true
+        co.elastic.logs/json.keys_under_root: true
+        co.elastic.logs/json.ignore_decoding_error: true
+        co.elastic.logs/json.overwrite_keys: true
+        co.elastic.logs/json.add_error_key: true
+        co.elastic.logs/json.expand_keys: true
+    volumes:
+      - .:/root/work
+    depends_on:
+      db:
+        condition: service_healthy
+      # elasticsearch:
+      #   condition: service_healthy
+      # kibana:
+      #   condition: service_healthy
+      # localstack:
+      #   condition: service_healthy
+  db:
+    image: postgres
+    restart: always
+    user: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: todo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval    : 1s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./data:/var/lib/postgresql/data
+  # filebeat:
+  #   user: root
+  #   image: docker.elastic.co/beats/filebeat:7.14.0
+  #   command: filebeat -e -strict.perms=false
+  #   volumes:
+  #     - ./dev/filebeat/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml
+  #     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  # elasticsearch:
+  #   labels:
+  #     co.elastic.logs/enabled: false
+  #   environment: 
+  #     - discovery.type=single-node
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-s", "-f", "http://localhost:9200/_cat/health"]
+  #     interval: 3s
+  #     timeout: 3s
+  #     retries: 80
+  #   ports:
+  #     - 9200:9200
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:7.14.0
+  #   depends_on:
+  #     elasticsearch:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-s", "-f", "http://localhost:5601/api/status"]
+  #     interval: 3s
+  #     timeout: 3s
+  #     retries: 80
+  #   ports:
+  #     - 5601:5601
+  # localstack:
+  #   image: localstack/localstack
+  #   environment:
+  #     SERVICES: s3
+  #   ports:
+  #     - "4566:4566"
+  #   volumes:
+  #     - ./dev/localstack:/docker-entrypoint-initaws.d
