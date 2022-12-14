@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 from flask import Flask, request
-from to_do_api.audit_logging.formatter import CustomFormatter
 from to_do_api.service.user import UserService
 from to_do_api.utils import response_with_status, success_response
 from to_do_api.audit_logging import HTTPAuditLogger
