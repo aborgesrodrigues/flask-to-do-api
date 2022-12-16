@@ -1,10 +1,11 @@
+import logging
 from http import HTTPStatus
 
 from flask import Flask, request
+
+from to_do_api.audit_logging import HTTPAuditLogger
 from to_do_api.service.user import UserService
 from to_do_api.utils import response_with_status, success_response
-from to_do_api.audit_logging import HTTPAuditLogger
-import logging
 
 __LOG_FMT = "{\"time\": \"%(asctime)s\", \"name\": \"[%(name)s]\", \"filename\": \"[%(filename)s]\", \"lineno\": \"[%(lineno)s]\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"}"
 
