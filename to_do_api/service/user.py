@@ -14,7 +14,10 @@ class UserService:
         user = User(**json_user)
 
         user.id = uuid.uuid4()
-        self.__dao.insert_user(user)
+        row_count = self.__dao.insert_user(user)
+
+        if row_count != 1:
+            raise Exception("Error inserting user")
         return user
 
     def list_users(self) -> t.List[User]:

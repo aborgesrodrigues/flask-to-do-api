@@ -28,7 +28,7 @@ venv-dev:
 	$(ACTIVATE) && $(PIP) install -r requirements-dev.txt && $(DEACTIVATE)
 
 test: venv-dev
-	$(ACTIVATE) && python -m pytest --cov gradeprimecommonlib --no-cov-on-fail --cov-fail-under=94 --cov-report=xml:coverage.xml --cov-report=html --cov-branch
+	$(ACTIVATE) && python -m pytest --cov to_do_api --no-cov-on-fail --cov-fail-under=94 --cov-report=xml:coverage.xml --cov-report=html --cov-branch
 
 start: 
 	$(ACTIVATE) && \

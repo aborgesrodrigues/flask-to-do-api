@@ -15,11 +15,15 @@ class DAO:
     DB_DATABASE = "DB_DATABASE"
 
     def __init__(self):
-        self.__connection = psycopg2.connect(user=os.getenv(DAO.DB_USER, "postgres"),
-                                  password=os.getenv(DAO.DB_PASSWORD, "example"),
-                                  host=os.getenv(DAO.DB_HOST, "db"),
-                                  port=os.getenv(DAO.DB_PORT, "5432"),
-                                  database=os.getenv(DAO.DB_DATABASE, "todo"))
+        self.__connection = None
+        try:
+            self.__connection = psycopg2.connect(user=os.getenv(DAO.DB_USER, "postgres"),
+                                    password=os.getenv(DAO.DB_PASSWORD, "example"),
+                                    host=os.getenv(DAO.DB_HOST, "db"),
+                                    port=os.getenv(DAO.DB_PORT, "5432"),
+                                    database=os.getenv(DAO.DB_DATABASE, "todo"))
+        except:
+            pass
     
     def execute(self, sql: str, parameters: tuple) -> int:
         try:
