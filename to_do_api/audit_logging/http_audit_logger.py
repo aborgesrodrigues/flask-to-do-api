@@ -25,7 +25,7 @@ class Options:
 
     @staticmethod
     def from_env():
-        s3_bucket = os.getenv(Options.AUDITLOG_S3_BUCKET, "wcf-audit-local")
+        s3_bucket = os.getenv(Options.AUDITLOG_S3_BUCKET, "audit-local")
         s3_directory = os.getenv(Options.AUDITLOG_S3_DIRECTORY, "todo-api/")
         s3_region = os.getenv(Options.AUDITLOG_S3_REGION, "us-east-1")
         s3_endpoint = os.getenv(Options.AUDITLOG_S3_ENDPOINT, None)

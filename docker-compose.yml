@@ -11,10 +11,10 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: example
+      DB_USER: pguser
+      DB_PASSWORD: pguser
       DB_DATABASE: todo
-      AUDITLOG_S3_BUCKET: "wcf-audit-local"
+      AUDITLOG_S3_BUCKET: "audit-local"
       AUDITLOG_S3_DIRECTORY: "todo-api/"
       AUDITLOG_S3_ENDPOINT: "http://localstack:4566"
       AUDITLOG_S3_REGION: "us-east-1"
@@ -40,21 +40,18 @@ services:
       localstack:
         condition: service_healthy
   db:
-    image: postgres
+    image: postgres:13-alpine3.18
     restart: always
-    user: postgres
     ports:
-      - 5432:5432
+      - '5432:5432'
     environment:
-      POSTGRES_PASSWORD: example
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pguser
       POSTGRES_DB: todo
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval    : 1s
-      timeout: 5s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./dev/db/initial.sql:/docker-entrypoint-initdb.d/initial.sql
   filebeat:
     user: root
     image: docker.elastic.co/beats/filebeat:7.14.0
@@ -89,7 +86,7 @@ services:
     ports:
       - 5601:5601
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:1.4.0
     environment:
       SERVICES: s3
     ports:
