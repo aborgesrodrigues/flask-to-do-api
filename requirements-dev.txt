@@ -1,6 +1,6 @@
 -r requirements.txt
 
-psycopg2-binary~=2.8.6
+psycopg2-binary
 
 # Test & lint packages
 coverage==6.4.4
